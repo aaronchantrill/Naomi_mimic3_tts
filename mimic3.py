@@ -8,6 +8,7 @@ import tempfile
 import unittest
 import uuid
 import wave
+from collections import OrderedDict
 from naomi import diagnose
 from naomi import plugin
 from naomi import profile
@@ -22,7 +23,7 @@ class Mimic3TTSPlugin(plugin.TTSPlugin):
     def __init__(self, *args, **kwargs):
         plugin.TTSPlugin.__init__(self, *args, **kwargs)
 
-        voice = profile.get(['mimic3-tts', 'voice'], 'en_US/cmu-arctic_low')
+        voice = profile.get(['mimic3-tts', 'voice'], 'en_US/cmu-arctic_low#slt')
         self._logger.info("Voice: {}".format(voice))
         voices = self.get_voices()
         if not voice or voice not in voices:
@@ -30,39 +31,48 @@ class Mimic3TTSPlugin(plugin.TTSPlugin):
                 "Voice {} not in Voices {}".format(voice, voices)
             )
             voice = ''
-        self.voice = voice
-        speaker = profile.get(['mimic3-tts','speaker'],'slt')
-        self._logger.info("Speaker: {}".format(speaker))
-        speakers = self.get_speakers(voice)
-        if not speaker or speaker not in speakers:
-            self._logger.info(
-                "Speaker {} not in speakers {}".format(speaker, speakers)
-            )
-            speaker = ''
-        self.speaker = speaker
+        if '#' in voice:
+            self.voice, self.speaker = voice.split('#')
+        else:
+            self.voice = voice
+            self.speaker = ''
         settings = mimic3_tts.tts.Mimic3Settings(
-            voice=voice,
-            speaker=speaker,
+            voice=self.voice,
+            speaker=self.speaker,
             sample_rate=16000
         )
         self.speakerobj = mimic3_tts.tts.Mimic3TextToSpeechSystem(settings)
 
+    def settings(self):
+        return OrderedDict(
+            [
+                (
+                    ('mimic3-tts', 'voice'), {
+                        'type': 'listbox',
+                        'title': self.gettext('Voice for Mimic 3 Text to Speech'),
+                        'description': "".join([
+                            self.gettext('This is the voice Naomi will use to speak to you')
+                        ]),
+                        'options': self.get_voices()
+                    }
+                )
+            ]
+        )
+
     @classmethod
     def get_voices(cls):
-        voices = mimic3_tts.tts.Mimic3TextToSpeechSystem(mimic3_tts.tts.Mimic3Settings()).get_voices()
+        language = profile.get_profile_var(['language'])
+        settings = mimic3_tts.tts.Mimic3Settings()
+        speakerobj = mimic3_tts.tts.Mimic3TextToSpeechSystem(settings)
+        language = 'en'
+        voices = [voice for voice in speakerobj.get_voices() if voice.language[:len(language)]==language]
         output = []
         for voice in voices:
-            output.append(voice.key)
-        return output
-    
-    @classmethod
-    def get_speakers(cls, voice):
-        voices = mimic3_tts.tts.Mimic3TextToSpeechSystem(mimic3_tts.tts.Mimic3Settings()).get_voices()
-        output = []
-        for v in voices:
-            if v.key == voice:
-                output = v.speakers
-                break
+            if voice.speakers is None:
+                output.append(f"{voice.key}")
+            else:
+                for speaker in voice.speakers:
+                    output.append(f"{voice.key}#{speaker}")
         return output
 
     # This plugin can receive a voice as a third parameter. This allows easier
