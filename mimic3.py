@@ -53,7 +53,8 @@ class Mimic3TTSPlugin(plugin.TTSPlugin):
                         'description': "".join([
                             self.gettext('This is the voice Naomi will use to speak to you')
                         ]),
-                        'options': self.get_voices()
+                        'options': self.get_voices(),
+                        'default': 'en_US/cmu-arctic_low#slt'
                     }
                 )
             ]
@@ -62,9 +63,12 @@ class Mimic3TTSPlugin(plugin.TTSPlugin):
     @classmethod
     def get_voices(cls):
         language = profile.get_profile_var(['language'])
+        # In the language variable, the language and region are separated by
+        # a dash. Mimic3 uses an underscore. So convert any dashes to
+        # underscores
+        language = language.replace('-', '_')
         settings = mimic3_tts.tts.Mimic3Settings()
         speakerobj = mimic3_tts.tts.Mimic3TextToSpeechSystem(settings)
-        language = 'en'
         voices = [voice for voice in speakerobj.get_voices() if voice.language[:len(language)]==language]
         output = []
         for voice in voices:
@@ -97,7 +101,9 @@ class Mimic3TTSPlugin(plugin.TTSPlugin):
             }
             self.speakerobj = mimic3_tts.tts.Mimic3TextToSpeechSystem(settings)
         self.speakerobj.begin_utterance()
-        self.speakerobj.speak_text(phrase)
+        # Mimic3 spells out any upper case words, so convert everything to
+        # lower case
+        self.speakerobj.speak_text(phrase.lower())
         tokens = self.speakerobj.end_utterance()
         
         output = b''
