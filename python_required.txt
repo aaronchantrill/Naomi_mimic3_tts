@@ -1,1 +1,2 @@
-mimic3
+mycroft-mimic3-tts
+
