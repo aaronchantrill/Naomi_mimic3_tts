@@ -103,27 +103,36 @@ class Mimic3TTSPlugin(plugin.TTSPlugin):
         self.speakerobj.begin_utterance()
         # Mimic3 spells out any upper case words, so convert everything to
         # lower case
-        self.speakerobj.speak_text(phrase.lower())
+        self.speakerobj.speak_text(phrase.lower().strip())
         tokens = self.speakerobj.end_utterance()
         
         output = b''
+        num_channels = None
+        sample_width_bytes = None
+        framerate = None
         for token in tokens:
             # there should only be one AudioResult token
             # we should be able to add up all the audio_bytes arrays
             # and create one file with all the AudioResults added together
             # if necessary.
             if isinstance(token, opentts_abc.AudioResult):
-                # use wave to add the file header
-                filename = f"/tmp/mimic3_{uuid.uuid4().hex}.wav"
-                # It seems silly to write this to a file since we have the raw
-                # data already.
-                with wave.open(filename, "wb") as w:
-                    w.setnchannels(token.num_channels)
-                    w.setsampwidth(token.sample_width_bytes)
-                    w.setframerate(token.sample_rate_hz // token.num_channels)
-                    w.setnframes(len(token.audio_bytes) // (token.sample_width_bytes * token.num_channels))
-                    w.writeframes(token.audio_bytes)
-                with open(filename, "rb") as f:
-                    output = f.read().strip()
-                os.remove(filename)
+                # Assume all AudioResult tokens have the same attributes
+                num_channels = token.num_channels
+                sample_width_bytes = token.sample_width_bytes
+                framerate = token.sample_rate_hz // token.num_channels
+                output += token.audio_bytes
+        if len(output) > 0:
+            # use wave to add the file header
+            filename = f"/tmp/mimic3_{uuid.uuid4().hex}.wav"
+            # It seems silly to write this to a file since we have the raw
+            # data already.
+            with wave.open(filename, "wb") as w:
+                w.setnchannels(num_channels)
+                w.setsampwidth(sample_width_bytes)
+                w.setframerate(framerate)
+                w.setnframes(len(output) // (sample_width_bytes * num_channels))
+                w.writeframes(output)
+            with open(filename, "rb") as f:
+                output = f.read().strip()
+            os.remove(filename)
         return output
