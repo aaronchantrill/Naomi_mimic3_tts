@@ -3,6 +3,7 @@ import mimic3_tts
 import opentts_abc
 import os
 import pipes
+import re
 import subprocess
 import tempfile
 import unittest
@@ -82,6 +83,11 @@ class Mimic3TTSPlugin(plugin.TTSPlugin):
     # This plugin can receive a voice as a third parameter. This allows easier
     # testing of different voices.
     def say(self, phrase, voice=None):
+        # Any upper-case words will be spelled rather than read. For instance:
+        # "nasa" will be read "na-saw" and "NASA" will be read "EN AY ES AY"
+        # Also, a word with numbers in it will only be read up to the first
+        # number, so for words like "MyWifi5248Network" we need to split the
+        # string into letters and numbers
         reconfigure = False
         if voice:
             # split voice and speaker at '#'
@@ -101,6 +107,8 @@ class Mimic3TTSPlugin(plugin.TTSPlugin):
             }
             self.speakerobj = mimic3_tts.tts.Mimic3TextToSpeechSystem(settings)
         self.speakerobj.begin_utterance()
+        # split any numbers into separate words
+        phrase = ' '.join(re.split(r'(\d+)', phrase))
         # Mimic3 spells out any upper case words, so convert everything to
         # lower case
         self.speakerobj.speak_text(phrase.lower().strip())

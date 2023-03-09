@@ -4,7 +4,7 @@ label: Mimic3-tts
 title: Mimic3 Text to Speech
 type: ttss
 description: "Allows Naomi to use Mimic3 Text to Speech voices"
-source: https://github.com/aaronchantrill/pocketsphinx_kws.gitblob/master/readme.md
+source: https://github.com/aaronchantrill/Naomi_mimic3_tts/blob/master/readme.md
 meta:
   - property: og:title
     content: "Mimic3 Text to Speech"
