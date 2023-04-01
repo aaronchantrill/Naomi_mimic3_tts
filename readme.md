@@ -14,7 +14,7 @@ meta:
 
 # Mimic 3 Text to Speech
 
-This plugin uses the [Mimic 3](https://mycroft.ai/mimic-3/) text to speech module to convert text into Naomi's spoken responses.
+This plugin uses the Mycroft [Mimic 3](https://mycroft.ai/mimic-3/) text to speech module to convert text into Naomi's spoken responses.
 
 This is a system with an amazing number of voices which are further subdivided into speakers.
 
@@ -22,11 +22,18 @@ To install this plugin, go to your Naomi's personal plugins directory at ~/.conf
 
 Create a "tts" folder if there isn't already one.
 
-cd tts
+`cd tts`
 
-git clone https://github.com/aaronchantrill/Naomi_mimic3_tts.git
+`git clone https://github.com/aaronchantrill/Naomi_mimic3_tts.git`
+
+finally, install the mycroft-mimic3-tts PyPi package with
+`cd Naomi_mimic3_tts`
+`pip install -r python_requirements.txt`
 
 Then start Naomi with Naomi --repopulate and select "mimic3-tts" as your text to speech engine.
+
+You can also just install this package through the Naomi Plugin Exchange with
+`Naomi --install "mimic3-tts"`
 
 Naomi will start with a default voice of "en_US/cmu-arctic_low#slt".
 The list of available voices is at https://github.com/MycroftAI/mimic3-voices.
